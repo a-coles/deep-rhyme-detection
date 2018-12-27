@@ -40,17 +40,19 @@ def pad_to_length(word, word_length):
 		word += ' '
 	return word
 
-def prepare_pairs(words1, words2, char_to_int):
+def prepare_pairs(words1, words2, char_to_int, word_length, verbose=False):
 	# Let the word length be the length of the longest string in the word lists
-	word_length = max(len(max(words1, key=len)), len(max(words2, key=len)))
 	dataX = []
-	print('Getting encoding...')
-	for i, word in tqdm(enumerate(words1)):
+	if verbose:
+		loop = tqdm(enumerate(words1))
+	else:
+		loop = enumerate(words1)
+	for i, word in loop:
 		word2 = words2[i]
 		seq = pad_to_length(word, word_length) + '&' + pad_to_length(word2, word_length)
 		int_seq = get_char_to_int(char_to_int, seq)
 		dataX.append(int_seq)
-	return word_length, dataX
+	return dataX
 
 def build_network_en(num_chars, input_shape, num_lstm_units):
 	embedding_vector_length = 150
@@ -89,17 +91,26 @@ if __name__ == '__main__':
 	word_length = max(len(max(words1, key=len)), len(max(words2, key=len)))
 	seq_length = (word_length * 2) + 1
 
-	# Get character-to-int mapping
-	char_to_int = get_char_mapping(concat_words)
-	num_chars = len(char_to_int)
-
 	if args.preprocessed:
 		if args.language == 'english':
 			with open(os.path.join('..', 'corpora', 'rhyme_en.pickle'), 'rb') as jar:
-	  			dataX = pickle.load(jar)
+				dataX = pickle.load(jar)
+			with open(os.path.join('..', 'models', 'char_to_int_en.pickle'), 'rb') as jar:
+				char_to_int = pickle.load(jar)
+			num_chars = len(char_to_int)
+			with open(os.path.join('..', 'models', 'word_length_en.pickle'), 'rb') as jar:
+				word_length = pickle.load(jar)
 	else:
+		# Get character-to-int mapping
+		char_to_int = get_char_mapping(concat_words)
+		num_chars = len(char_to_int)
+		with open(os.path.join('..', 'models', 'char_to_int_en.pickle'), 'wb') as jar:
+			pickle.dump(char_to_int, jar, protocol=2)
+		with open(os.path.join('..', 'models', 'word_length_en.pickle'), 'wb') as jar:
+			pickle.dump(word_length, jar, protocol=2)
+
 		# Get word pairs
-		word_length, dataX = prepare_pairs(words1, words2, char_to_int)
+		dataX = prepare_pairs(words1, words2, char_to_int, word_length)
 		print('Integer encoding:')
 		dataX = np.array(dataX)
 		print(dataX)
