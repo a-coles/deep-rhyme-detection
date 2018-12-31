@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
 	if args.language == 'english':
 		model_file = os.path.join('..', 'models', 'rhyme_en.h5')
-		corpus_file = os.path.join('..', 'corpora', 'rhyme_corpus_en.txt')
+		corpus_file = os.path.join('..', 'corpora', 'rhyme_corpus_1000_en.txt')
 
 	# Import the model
 	model = load_model(model_file)

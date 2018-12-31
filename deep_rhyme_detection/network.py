@@ -39,6 +39,7 @@ class Corpus:
 		self.concat_words = ' '.join(self.words)
 		self.word_length = max(len(max(self.words1, key=len)), len(max(self.words2, key=len)))
 		self.seq_length = (self.word_length * 2) + 1
+		self.get_char_mapping()
 
 	def get_char_mapping(self):
 		'''
@@ -73,8 +74,8 @@ class Corpus:
 			loop = enumerate(self.words1)
 		for i, word in loop:
 			word2 = self.words2[i]
-			seq = pad_to_length(word) + '&' + pad_to_length(word2)
-			int_seq = get_char_to_int(seq)
+			seq = self.pad_to_length(word) + '&' + self.pad_to_length(word2)
+			int_seq = self.get_char_to_int(seq)
 			dataX.append(int_seq)
 		return dataX
 
@@ -82,14 +83,14 @@ class Corpus:
 		'''
 		Converts the integer-coded representation into a one-hot encoding.
 		'''
-		dataX = np.array([to_categorical(pad_sequences((data,), seq_length), num_chars + 1)  for data in dataX])
+		dataX = np.array([to_categorical(pad_sequences((data,), self.seq_length), self.num_chars + 1)  for data in dataX])
 		dataX = np.array([data[0] for data in dataX])
 		return dataX
 
 	def prepare_data(self, preprocessed=False):
 		if not preprocessed:
-			pairs = prepare_pairs()
-			onehot = get_onehot()
+			pairs = self.prepare_pairs()
+			onehot = self.get_onehot(pairs)
 		else:
 			with open(os.path.join(self.corpus_dir, 'rhyme_onehot_{}.pickle'.format(self.language))) as jar:
 				onehot = pickle.load(jar)
@@ -112,11 +113,13 @@ class Network:
 		self.X_train, self.X_test, y_train, y_test = train_test_split(corpus.dataX, corpus.labels, test_size=0.2, random_state=42)
 		self.y_train = to_categorical(y_train)
 		self.y_test = to_categorical(y_test)
-		self.input_shape = X_train[0].shape
+		self.input_shape = self.X_train[0].shape
 
 	def build_network_en(self):
 		model = Sequential()
-		model.add(Bidirectional(LSTM(num_lstm_units), input_shape=input_shape))
+		model.add(Bidirectional(LSTM(self.num_lstm_units, return_sequences=True), input_shape=self.input_shape))
+		model.add(Bidirectional(LSTM(self.num_lstm_units, return_sequences=True)))
+		model.add(Bidirectional(LSTM(self.num_lstm_units)))
 		model.add(Dense(2, activation='softmax'))
 		adam = Adam(lr=self.learning_rate)
 		model.compile(loss='binary_crossentropy', optimizer=adam, metrics=['accuracy'])
@@ -140,7 +143,7 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	# Set up the corpus object
-	corpus_file = os.path.join('..', 'corpora', 'rhyme_corpus_en.txt')
+	corpus_file = os.path.join('..', 'corpora', 'rhyme_corpus_1000_en.txt')
 	corpus = Corpus(corpus_file)
 	corpus.prepare_data(preprocessed=args.preprocessed)
 

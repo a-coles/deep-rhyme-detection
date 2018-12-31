@@ -1,7 +1,7 @@
 '''
 Functions for building rhyme corpus.
 The idea:
-- Assemble the 5000 most frequent English words.
+- Assemble the (5000) most frequent English words.
   https://www.wordfrequency.info/
 - Query a rhyming API to get lists of words that rhyme with these.
 - Parse through to create pairs of words that rhyme.
@@ -16,9 +16,9 @@ from datamuse import datamuse
 from tqdm import tqdm
 
 
-def get_top_words(top_file):
+def get_top_words(top_file, top_num=5000):
 	with open(top_file, 'r') as fp:
-		top_lines = fp.readlines()
+		top_lines = fp.readlines()[:top_num]
 	top_words = [x.strip() for x in top_lines]
 	return top_words
 
@@ -68,18 +68,21 @@ def get_txt(rhyme_dict, output_path, neg=False):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Assemble a rhyming corpus.')
 	parser.add_argument('language', help='The language to build corpora for. Can be english.')
+	parser.add_argument('top_num', type=int, help='The number of top words to build the corpus with (max 5000).')
 	args = parser.parse_args()
 
 	# Set up
 	if args.language == 'english':
 		api = datamuse.Datamuse()
 		top_file = os.path.join('..', 'corpora', 'top_5000_en.csv')
-		output_file = os.path.join('..', 'corpora', 'rhyme_corpus_en.txt')
+		output_file = os.path.join('..', 'corpora', 'rhyme_corpus_{}_en.txt'.format(args.top_num))
 	else:
-		raise ValueError('Invalid corpus name. Can be one of: english.')
+		raise ValueError('Invalid corpus name: {}. Can be one of: english.'.format(args.language))
+	if args.top_num > 5000:
+		raise ValueError('Maximum number of top words exceeded: {}. Pick a number betwee 1 and 5000.'.format(args.top_num))
 
 	# Get rhyming dictionaries
-	top_words = get_top_words(top_file)
+	top_words = get_top_words(top_file, args.top_num)
 	rhyme_dict = get_rhyme_dict(top_words, api=api)
 	neg_rhyme_dict = get_neg_rhyme_dict(rhyme_dict)
 
