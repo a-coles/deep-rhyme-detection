@@ -5,12 +5,14 @@ import os
 import pickle
 import numpy as np
 import string
+import itertools
 
 from keras.models import load_model
 from keras.utils import to_categorical
 from keras.preprocessing.sequence import pad_sequences
 
 from network import Corpus, Network
+from collections import OrderedDict
 
 
 class Rhymescheme:
@@ -43,6 +45,10 @@ class Rhymescheme:
 		onehot = np.array([to_categorical(pad_sequences((data,), corpus.seq_length), corpus.num_chars+1)  for data in seq])
 		onehot = np.array([data[0] for data in onehot])
 		return onehot
+
+	def get_line_endings(self):
+		line_endings = [line.split(' ')[-1] for line in self.text_lines]
+		return line_endings
 
 	def does_rhyme(self, word1, word2):
 		'''
@@ -89,8 +95,84 @@ class Rhymescheme:
 				print('No rhyme found for {}'.format(word))
 
 		self.rhyme_scheme = rhyme_scheme
-		print(self.clean_words)
 		print(self.rhyme_scheme)
+
+	def get_rhyming_blocks(self):
+		'''
+		Consolidate the rhyme-coded text into blocks, where each word
+		in the block shares the rhyme code. Account for line breaks.
+		'''
+		self.get_rhyme_scheme()
+		coded_words = [(word, self.rhyme_scheme[word]) for word in self.clean_words]
+		line_endings = self.get_line_endings()
+		rhyme_blocks = []
+
+		def in_ending(word, line_endings):
+			word_in_ending = False
+			for ending in line_endings:
+				if word in ending and '\n' in ending:
+					word_in_ending = True
+					break
+			return word_in_ending
+
+		def combine_code(group_list, code):
+			combined_words = ' ' .join([item[0] for item in group_list])
+			combined_code = (combined_words, code)
+			return combined_code
+
+		for key, group in itertools.groupby(coded_words, lambda x: x[1]):	# Rhyme code
+			group_list = list(group)
+			if len(group_list) == 1:
+				rhyme_blocks.append(group_list[0])
+			elif len(group_list) > 1:
+				ending_found = False
+				for i, word in enumerate(group_list):
+					# This may break if words in endings are repeated throughout - come back
+					if in_ending(word[0], line_endings):
+						before_ending = group_list[:i+1]
+						after_ending = group_list[i+1:]
+						if before_ending:
+							rhyme_blocks.append(combine_code(before_ending, key))
+						if after_ending:
+							rhyme_blocks.append(combine_code(after_ending, key))
+						ending_found = True
+						break
+				if not ending_found:
+					combined_words = ' ' .join([item[0] for item in group_list])
+					combined_code = (combined_words, key)
+					rhyme_blocks.append(combined_code)
+
+		print(rhyme_blocks)
+		return rhyme_blocks
+
+	def scheme_to_text(self):
+		delimiters = [['{','}'], ['[',']'], ['(',')'], ['<','>'], ['/','/'],
+					  ['`','`'], ['!','!'], ['#','#'], ['$','$'], ['%','%'],
+					  ['^','^'], ['&','&'], ['*','*'], ['~','~'], ['?','?']]
+		rhyme_blocks = self.get_rhyming_blocks()
+		rhyme_block_words = [item[0] for item in rhyme_blocks]
+
+		# Back-map to formatted (with punctuation and line breaks) original text
+		formatted_blocks = []
+		counter = 0
+		for i, block in enumerate(rhyme_block_words):
+			length = len(block.split(' '))
+			formatted_list = self.orig_words[counter:counter+length]
+			formatted_string = ' '.join(formatted_list)
+			formatted_block = (formatted_string, rhyme_blocks[i][1])
+			formatted_blocks.append(formatted_block)
+			counter += length
+
+		delimited_text = []
+		for block in formatted_blocks:
+			delimiter = delimiters[block[1]]
+			delimited = delimiter[0] + block[0] + delimiter[1]
+			if '\n' in delimited:
+				delimited = delimited.replace('\n', '') + '\n'
+			delimited_text.append(delimited)
+		delimited_string = ' '.join(delimited_text)
+		print(delimited_string)
+		return delimited_string
 
 
 
@@ -102,7 +184,7 @@ if __name__ == '__main__':
 
 	if args.language == 'english':
 		model_file = os.path.join('..', 'models', 'rhyme_en.h5')
-		corpus_file = os.path.join('..', 'corpora', 'rhyme_corpus_1000_en.txt')
+		corpus_file = os.path.join('..', 'corpora', 'rhyme_corpus_en.txt')
 
 	# Import the model
 	model = load_model(model_file)
@@ -117,4 +199,4 @@ if __name__ == '__main__':
 
 	# Get the rhyme scheme
 	rhyme_scheme = Rhymescheme(text_lines, corpus, model)
-	rhyme_scheme.get_rhyme_scheme()
+	rhyme_scheme.scheme_to_text()

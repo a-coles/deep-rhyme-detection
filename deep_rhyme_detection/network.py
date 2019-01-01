@@ -147,8 +147,16 @@ if __name__ == '__main__':
 	corpus = Corpus(corpus_file)
 	corpus.prepare_data(preprocessed=args.preprocessed)
 
+	# Set network parameters - change these if retraining needed
+	num_lstm_units = 8
+	num_epochs = 10
+	learning_rate = 0.01
+	batch_size = 2048
+
 	# Build and train network
-	network = Network(corpus)
+	network = Network(corpus,
+					  num_lstm_units=num_lstm_units, num_epochs=num_epochs,
+					  learning_rate=learning_rate, batch_size=batch_size)
 	network.build_network_en()
 	network.train_network_en()
 
