@@ -26,7 +26,7 @@ To install, first clone this repo:
 
 ```
 cd path/to/desired/install/location
-git clone https://github.com/violetguos/project-ift6390.git
+git clone https://github.com/a-coles/deep-rhyme-detection.git
 ```
 
 Then install dependencies by running:
@@ -72,16 +72,16 @@ where the arguments are:
 
 ### Network training
 
-This repo comes with a pretrained RNN that predicts whether two English words rhyme with each other, `rhyme_en.h5` under the `models/` directory. The English network could always use more tuning (pull requests welcome!), but for now, it consists of a 6-layer bidirectional character-level LSTM, each with 32 units, using an Adam optimizer and a cross-entropy loss.
+This repo comes with a pretrained RNN that predicts whether two English words rhyme with each other, `rhyme_en.h5` under the `models/` directory. The English network could always use more tuning (pull requests welcome!), but for now, it consists of a 6-layer bidirectional character-level LSTM, each with 16 units, using an Adam optimizer and a cross-entropy loss.
 
 If you would like to re-train the RNN with different hyperparameters, you can adjust their values in the main method of `network.py`. Open the `network.py` file in a text editor and change the values in the main as you see fit:
 
 ```
 # Set network parameters - change these if retraining needed
-num_lstm_units = 8
+num_lstm_units = 16
 num_epochs = 10
-learning_rate = 0.01
-batch_size = 2048
+learning_rate = 0.001
+batch_size = 4096
 ```
 
 Then, from the command line, run:

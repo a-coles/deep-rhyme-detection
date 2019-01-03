@@ -151,10 +151,10 @@ if __name__ == '__main__':
 	corpus.prepare_data(preprocessed=args.preprocessed)
 
 	# Set network parameters - change these if retraining needed
-	num_lstm_units = 8
+	num_lstm_units = 16
 	num_epochs = 10
-	learning_rate = 0.01
-	batch_size = 2048
+	learning_rate = 0.001
+	batch_size = 4096
 
 	# Build and train network
 	network = Network(corpus,
