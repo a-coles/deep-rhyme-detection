@@ -187,6 +187,33 @@ class Stanza:
 		#print(delimited_string)
 		return delimited_string
 
+	def scheme_to_html(self, rhyme_blocks=None, stanza_num=None):
+		if stanza_num:
+			print('Calculating rhyme scheme for stanza {}...'.format(stanza_num+1))
+
+
+		colors = ['#4CA999', '#1B0661', '#39DD2B', '#A87DCF', '#736F2D',
+				  '#697D54', '#AAC315', '#A8030C', '#C89FCC', '#49DADA',
+				  '#D94E8C', '#4366AF', '#770D85', '#BDFED0', '#B6426F']
+		if not rhyme_blocks:
+			rhyme_blocks = self.get_rhyming_blocks()
+		rhyme_block_words = [item[0] for item in rhyme_blocks]
+
+		# Back-map to formatted (with punctuation and line breaks) original text
+		formatted_blocks = self.scheme_to_orig(rhyme_blocks)
+
+		delimited_html = []
+		for block in formatted_blocks:
+			color = colors[block[1]]
+			delimited = f'<span style="background-color:{color}; color: white">{block[0]} </span>'
+			# Push <br/> after at the end of each line
+			if '\n' in delimited:
+				delimited = delimited.replace('\n', '') + '<br/>'
+			delimited_html.append(delimited)
+		html = '\n'.join(delimited_html)
+		html += '<br/>'
+		return html
+
 class Poem:
 	'''
 	Poems have multiple stanzas. This class gives functions for handling text with many
@@ -214,11 +241,15 @@ class Poem:
 		#	self.get_rhyme_blocks()
 		self.rhyme_scheme = [stanza.scheme_to_text(stanza_num=i) for i, stanza in enumerate(self.stanzas)]
 
+	def get_rhyme_scheme_html(self):
+		self.rhyme_scheme_html = [stanza.scheme_to_html(stanza_num=i) for i, stanza in enumerate(self.stanzas)]
+
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('language', help='Can be english.')
 	parser.add_argument('input_file', help='Path to the input file.')
 	parser.add_argument('output_path', help='Path to the output directory.')
+	parser.add_argument('format', help='Whether the output should be .txt or .html')
 	args = parser.parse_args()
 
 	if args.language == 'english':
@@ -241,18 +272,33 @@ if __name__ == '__main__':
 	# Get the rhyme scheme
 	print('Getting rhyme scheme.')
 	poem = Poem(text_lines, corpus, model)
-	poem.get_rhyme_scheme_text()
-	for stanza in poem.rhyme_scheme:
-		print(stanza)
 	#rhyme_scheme = Stanza(text_lines, corpus, model)
 	#rhyme_scheme.scheme_to_text()
 
-	# Save to output file
-	input_filename = os.path.basename(args.input_file)
-	input_split = input_filename.split('.')
-	output_filename = input_split[0] + '_r.' + input_split[1]
-	output_file = os.path.join(args.output_path, output_filename)
-	with open(output_file, 'w') as fp:
+	if args.format == 'txt':
+		poem.get_rhyme_scheme_text()
 		for stanza in poem.rhyme_scheme:
-			fp.write(stanza)
-			fp.write('\n')
+			print(stanza)
+		input_filename = os.path.basename(args.input_file)
+		input_split = input_filename.split('.')
+		output_filename = input_split[0] + '_r.' + input_split[1]
+		output_file = os.path.join(args.output_path, output_filename)
+		with open(output_file, 'w') as fp:
+			for stanza in poem.rhyme_scheme:
+				fp.write(stanza)
+				fp.write('\n')
+
+
+	if args.format == 'html':
+		# Generate rhyme scheme in HTML
+		poem.get_rhyme_scheme_html()
+		for stanza in poem.rhyme_scheme_html:
+			print(stanza)
+		input_filename = os.path.basename(args.input_file)
+		input_split = input_filename.split('.')
+		output_html_filename = input_split[0] + '_r.html'
+		output_file = os.path.join(args.output_path, output_html_filename)
+		with open(output_file, 'w') as fp:
+			for stanza in poem.rhyme_scheme_html:
+				fp.write(stanza)
+				fp.write('\n')
