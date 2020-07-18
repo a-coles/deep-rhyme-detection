@@ -41,7 +41,7 @@ This repo is designed to be easily integratable with other projects, with functi
 
 ```
 cd deep_rhyme_detection/
-python rhyme.py [language] [input_file] [output_dir]
+python rhyme.py [language] [input_file] [output_dir] [format]
 ```
 
 where the arguments are:
@@ -49,6 +49,7 @@ where the arguments are:
 * `language`, the language of the text you want to analyze. This can only currently take the value `english` (one day there will hopefully be support for other languages). 
 * `input_file`, the path to the file containing the text to analyze. This should be a simple text file where lines in a stanza are separated by line breaks and stanzas are separated by a blank line. Punctuation and the like is fine to include.
 * `output_dir`, the path to the directory where the analyzed text will be dumped to a new text file.
+* `format`, whether the rhyme scheme annotated output should be `txt` or `html`.
 
 
 
