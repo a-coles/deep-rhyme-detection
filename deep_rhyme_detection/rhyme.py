@@ -9,7 +9,7 @@ import itertools
 
 from keras.models import load_model
 from keras.utils import to_categorical
-from keras.preprocessing.sequence import pad_sequences
+from keras_preprocessing.sequence import pad_sequences
 
 from network import Corpus, Network
 from tqdm import tqdm
